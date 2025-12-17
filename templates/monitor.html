@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг • NeoControl</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --dark: #0f172a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: var(--dark);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .monitoring-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .monitoring-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .camera-container {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #videoElement {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .camera-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .location-container {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+        }
+        
+        .coordinates-display {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+            font-family: 'Monaco', monospace;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .status.success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #a7f3d0;
+        }
+        
+        .status.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fecaca;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div>
+            <h2>📹 Мониторинг в реальном времени</h2>
+            <p style="color: #94a3b8; font-size: 14px;">Пользователь: {{ username }}</p>
+        </div>
+        <div>
+            <a href="/dashboard" class="btn btn-primary">Назад к панели</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div id="statusMessage" class="status"></div>
+        
+        <div class="monitoring-grid">
+            <!-- Левая колонка: Камера -->
+            <div class="camera-container">
+                <div id="cameraLoading" class="loading">
+                    <p>Загрузка камеры...</p>
+                    <p style="font-size: 12px;">Разрешите доступ к камере при запросе браузера</p>
+                </div>
+                <video id="videoElement" autoplay playsinline style="display: none;"></video>
+                <div class="camera-controls">
+                    <button id="startCamera" class="btn btn-primary" onclick="startCamera()">
+                        🎥 Включить камеру
+                    </button>
+                    <button id="captureBtn" class="btn btn-primary" onclick="captureImage()" disabled>
+                        📸 Сделать снимок
+                    </button>
+                    <button id="stopCamera" class="btn btn-danger" onclick="stopCamera()" disabled>
+                        ⏹️ Остановить
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Правая колонка: Геолокация -->
+            <div class="location-container">
+                <h3>📍 Геолокация</h3>
+                <p style="color: #94a3b8; margin: 10px 0;">
+                    Нажмите кнопку для получения текущих координат
+                </p>
+                
+                <button id="getLocationBtn" class="btn btn-primary" onclick="getRealLocation()" style="width: 100%;">
+                    🌍 Получить мои координаты
+                </button>
+                
+                <div class="coordinates-display">
+                    <div id="locationResult" style="text-align: center; color: #94a3b8;">
+                        Координаты еще не получены
+                    </div>
+                    <div id="locationDetails" style="margin-top: 15px; font-size: 14px; display: none;">
+                        <div><strong>Точность:</strong> <span id="accuracy">-</span> метров</div>
+                        <div><strong>Время:</strong> <span id="locationTime">-</span></div>
+                        <div><strong>Статус:</strong> <span id="locationStatus">-</span></div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: rgba(15, 23, 42, 0.5); border-radius: 10px;">
+                    <h4 style="margin-bottom: 10px;">📊 Последние координаты</h4>
+                    <div id="recentLocations" style="max-height: 200px; overflow-y: auto;">
+                        <p style="color: #94a3b8; text-align: center;">Нет данных</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <p style="color: #94a3b8; font-size: 12px;">
+                NeoControl v3.0 • Все действия записываются в лог системы
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let mediaStream = null;
+        let currentLocation = null;
+        
+        // ==================== КАМЕРА ====================
+        async function startCamera() {
+            try {
+                showStatus('Запрос доступа к камере...', 'info');
+                
+                // Останавливаем предыдущий поток, если есть
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Запрашиваем доступ к камере
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: {
+                        facingMode: 'environment', // Задняя камера
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false 
+                });
+                
+                // Показываем видео
+                const videoElement = document.getElementById('videoElement');
+                videoElement.srcObject = mediaStream;
+                videoElement.style.display = 'block';
+                
+                // Скрываем загрузку
+                document.getElementById('cameraLoading').style.display = 'none';
+                
+                // Обновляем кнопки
+                document.getElementById('startCamera').disabled = true;
+                document.getElementById('captureBtn').disabled = false;
+                document.getElementById('stopCamera').disabled = false;
+                
+                showStatus('Камера активирована', 'success');
+                
+            } catch (error) {
+                showStatus(`Ошибка камеры: ${error.name}`, 'error');
+                console.error('Camera error:', error);
+            }
+        }
+        
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+                
+                document.getElementById('videoElement').style.display = 'none';
+                document.getElementById('cameraLoading').style.display = 'block';
+                
+                document.getElementById('startCamera').disabled = false;
+                document.getElementById('captureBtn').disabled = true;
+                document.getElementById('stopCamera').disabled = true;
+                
+                showStatus('Камера остановлена', 'success');
+            }
+        }
+        
+        async function captureImage() {
+            if (!mediaStream) {
+                showStatus('Камера не активирована', 'error');
+                return;
+            }
+            
+            try {
+                const video = document.getElementById('videoElement');
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Конвертируем в Blob
+                canvas.toBlob(async (blob) => {
+                    const formData = new FormData();
+                    formData.append('image', blob, `capture_${Date.now()}.jpg`);
+                    
+                    showStatus('Отправка изображения...', 'info');
+                    
+                    const response = await fetch('/api/capture_image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showStatus(`Изображение сохранено: ${result.filename}`, 'success');
+                        
+                        // Показываем превью
+                        const imgUrl = canvas.toDataURL('image/jpeg');
+                        const preview = document.createElement('img');
+                        preview.src = imgUrl;
+                        preview.style.maxWidth = '200px';
+                        preview.style.borderRadius = '8px';
+                        preview.style.marginTop = '10px';
+                        
+                        document.getElementById('locationResult').appendChild(preview);
+                        
+                    } else {
+                        showStatus(`Ошибка: ${result.error}`, 'error');
+                    }
+                }, 'image/jpeg', 0.9);
+                
+            } catch (error) {
+                showStatus(`Ошибка захвата: ${error.message}`, 'error');
+            }
+        }
+        
+        // ==================== ГЕОЛОКАЦИЯ ====================
+        function getRealLocation() {
+            if (!navigator.geolocation) {
+                showStatus('Геолокация не поддерживается браузером', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('getLocationBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Определение...';
+            
+            // Опции для высокой точности
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+            
+            navigator.geolocation.getCurrentPosition(
+                // Успех
+                async (position) => {
+                    currentLocation = {
+                        lat: position.coords.latitude.toFixed(6),
+                        lon: position.coords.longitude.toFixed(6),
+                        accuracy: Math.round(position.coords.accuracy),
+                        altitude: position.coords.altitude ? position.coords.altitude.toFixed(1) : null,
+                        speed: position.coords.speed ? position.coords.speed.toFixed(1) : null,
+                        timestamp: new Date(position.timestamp).toLocaleString('ru-RU')
+                    };
+                    
+                    // Обновляем интерфейс
+                    document.getElementById('locationResult').innerHTML = `
+                        <div style="font-size: 18px; font-weight: bold; color: #4dabf7;">
+                            ${currentLocation.lat}, ${currentLocation.lon}
+                        </div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">
+                            Координаты получены
+                        </div>
+                    `;
+                    
+                    document.getElementById('accuracy').textContent = currentLocation.accuracy;
+                    document.getElementById('locationTime').textContent = currentLocation.timestamp;
+                    document.getElementById('locationStatus').textContent = 'Успешно';
+                    document.getElementById('locationDetails').style.display = 'block';
+                    
+                    // Добавляем в список последних
+                    addRecentLocation(currentLocation);
+                    
+                    // Отправляем на сервер
+                    try {
+                        const response = await fetch('/api/update_location', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(currentLocation)
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            showStatus('Координаты сохранены на сервере', 'success');
+                            
+                            // Обновляем статистику на dashboard
+                            updateDashboardStats();
+                            
+                        } else {
+                            showStatus(`Ошибка сервера: ${result.error}`, 'error');
+                        }
+                        
+                    } catch (error) {
+                        showStatus('Ошибка сети при отправке координат', 'error');
+                    }
+                    
+                    // Восстанавливаем кнопку
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                },
+                
+                // Ошибка
+                (error) => {
+                    let errorMessage;
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'Доступ к геолокации запрещен. Разрешите в настройках браузера.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Информация о местоположении недоступна.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = 'Время запроса истекло.';
+                            break;
+                        default:
+                            errorMessage = 'Неизвестная ошибка геолокации.';
+                    }
+                    
+                    showStatus(errorMessage, 'error');
+                    
+                    document.getElementById('locationResult').innerHTML = `
+                        <div style="color: #ef4444;">
+                            ❌ ${errorMessage}
+                        </div>
+                    `;
+                    
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                },
+                
+                options
+            );
+        }
+        
+        function addRecentLocation(location) {
+            const container = document.getElementById('recentLocations');
+            const existingContent = container.querySelector('p');
+            
+            if (existingContent && existingContent.textContent === 'Нет данных') {
+                container.innerHTML = '';
+            }
+            
+            const locationElement = document.createElement('div');
+            locationElement.style.padding = '8px';
+            locationElement.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+            locationElement.style.fontSize = '12px';
+            locationElement.innerHTML = `
+                <div style="display: flex; justify-content: space-between;">
+                    <span>${location.lat}, ${location.lon}</span>
+                    <span style="color: #94a3b8;">${location.timestamp.split(' ')[1]}</span>
+                </div>
+                <div style="color: #64748b; font-size: 11px;">
+                    Точность: ±${location.accuracy}м
+                </div>
+            `;
+            
+            container.prepend(locationElement);
+            
+            // Ограничиваем количество записей
+            if (container.children.length > 5) {
+                container.removeChild(container.lastChild);
+            }
+        }
+        
+        // ==================== УТИЛИТЫ ====================
+        function showStatus(message, type = 'info') {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            statusElement.style.display = 'block';
+            
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        async function updateDashboardStats() {
+            try {
+                // Обновляем сессию и статистику
+                const response = await fetch('/api/session_info');
+                if (response.ok) {
+                    console.log('Статистика обновлена');
+                }
+            } catch (error) {
+                console.error('Ошибка обновления статистики:', error);
+            }
+        }
+        
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            showStatus('Система мониторинга готова к работе', 'success');
+            
+            // Проверяем поддержку камеры
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                document.getElementById('cameraLoading').innerHTML = `
+                    <p style="color: #ef4444;">Камера не поддерживается вашим браузером</p>
+                `;
+                document.getElementById('startCamera').disabled = true;
+            }
+            
+            // Проверяем поддержку геолокации
+            if (!navigator.geolocation) {
+                document.getElementById('getLocationBtn').disabled = true;
+                document.getElementById('getLocationBtn').innerHTML = '🌍 Не поддерживается';
+                document.getElementById('getLocationBtn').style.opacity = '0.5';
+            }
+        });
+    </script>
+</body>
+</html>

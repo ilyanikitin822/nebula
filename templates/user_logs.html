@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои действия • NeoControl</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --dark: #0f172a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: var(--dark);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .logs-table {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .log-row {
+            display: grid;
+            grid-template-columns: 150px 120px 1fr;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            align-items: center;
+        }
+        
+        .log-row.header {
+            background: rgba(99, 102, 241, 0.2);
+            font-weight: bold;
+        }
+        
+        .log-type {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .type-geolocation { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .type-image { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
+        .type-login { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .type-system { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+        
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        
+        .empty-logs {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div>
+            <h2>📊 История моих действий</h2>
+            <p style="color: #94a3b8; font-size: 14px;">Пользователь: {{ username }} • ID: {{ user_id }}</p>
+        </div>
+        <div>
+            <a href="/dashboard" class="btn">Назад к панели</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="logs-header">
+            <h3>Всего записей: {{ logs|length }}</h3>
+            <button class="btn export-btn" onclick="exportLogs()">📥 Экспорт логов</button>
+        </div>
+        
+        {% if logs %}
+        <div class="logs-table">
+            <div class="log-row header">
+                <div>Время</div>
+                <div>Тип действия</div>
+                <div>Детали</div>
+            </div>
+            
+            {% for log in logs %}
+            <div class="log-row">
+                <div>{{ log.timestamp }}</div>
+                <div>
+                    <span class="log-type type-{{ log.action_type }}">
+                        {% if log.action_type == 'geolocation' %}📍 Геолокация
+                        {% elif log.action_type == 'image_capture' %}📸 Изображение
+                        {% elif log.action_type == 'login' %}🔐 Вход
+                        {% elif log.action_type == 'logout' %}🚪 Выход
+                        {% else %}⚙️ {{ log.action_type }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div>{{ log.details }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-logs">
+            <h3>📭 Логов пока нет</h3>
+            <p style="margin-top: 10px;">Ваши действия появятся здесь после использования системы</p>
+            <p style="font-size: 12px; margin-top: 20px;">
+                Попробуйте получить геолокацию или сделать снимок в разделе "Мониторинг"
+            </p>
+        </div>
+        {% endif %}
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <p style="color: #94a3b8; font-size: 12px;">
+                NeoControl v3.0 • Логи хранятся 90 дней • Все действия записаны
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function exportLogs() {
+            // Создаем текстовое содержимое для экспорта
+            let logContent = "NeoControl - История действий\n";
+            logContent += "Пользователь: {{ username }}\n";
+            logContent += "ID: {{ user_id }}\n";
+            logContent += "Дата экспорта: " + new Date().toLocaleString('ru-RU') + "\n\n";
+            
+            {% for log in logs %}
+            logContent += "{{ log.timestamp }} | {{ log.action_type }} | {{ log.details }}\n";
+            {% endfor %}
+            
+            // Создаем Blob и ссылку для скачивания
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `neocontrol_logs_{{ username }}_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('Логи экспортированы в файл');
+        }
+        
+        // Автоматическое обновление логов каждые 30 секунд
+        setInterval(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
