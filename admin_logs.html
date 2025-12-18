@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Логи системы • Админ-панель</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --dark: #0f172a;
+        }
+        
+        body {
+            background: var(--dark);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .header {
+            margin-bottom: 30px;
+        }
+        
+        .logs-container {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+            font-family: 'Monaco', monospace;
+        }
+        
+        .log-time {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+        
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .page-info {
+            color: #94a3b8;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Логи системы (всего: {{ total }})</h1>
+        <a href="/admin/dashboard" class="btn">Назад</a>
+        <a href="/dashboard" class="btn">На главную</a>
+    </div>
+    
+    <div class="logs-container">
+        {% if logs %}
+            {% for log in logs %}
+            <div class="log-entry">
+                <div class="log-time">{{ log.timestamp }}</div>
+                <div>
+                    <strong>{{ log.username or 'anonymous' }}</strong> 
+                    [{{ log.action_type }}]: 
+                    {{ log.details }}
+                </div>
+                <div style="color: #64748b; font-size: 12px;">
+                    IP: {{ log.ip_address }} • {{ log.user_agent or '' }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="text-align: center; color: #94a3b8;">Логов нет</p>
+        {% endif %}
+    </div>
+    
+    <div class="pagination">
+        <div class="page-info">
+            Страница {{ page }} • Показано {{ logs|length }} из {{ total }}
+        </div>
+        {% if page > 1 %}
+        <a href="/admin/logs?page={{ page-1 }}" class="btn">Назад</a>
+        {% endif %}
+        {% if logs|length == per_page %}
+        <a href="/admin/logs?page={{ page+1 }}" class="btn">Вперед</a>
+        {% endif %}
+    </div>
+</body>
+</html>

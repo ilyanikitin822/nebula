@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Monitor • NeoControl</title>
+    <style>
+/* Основные кнопки управления камерой */
+.camera-main-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 25px 0 15px 0;
+    flex-wrap: wrap;
+    padding: 0 20px;
+}
+
+/* Контейнер для переключения камеры */
+.camera-switch-container {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 0 20px 20px 20px;
+    border: 1px solid var(--card-border);
+}
+
+/* Кнопки переключения камеры */
+.camera-switch-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Компактные кнопки для переключения камеры */
+.btn-small {
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+    min-width: 130px;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .camera-main-controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 0 15px;
+    }
+    
+    .camera-main-controls .btn {
+        width: 100%;
+        max-width: 280px;
+    }
+    
+    .camera-switch-container {
+        margin: 0 15px 15px 15px;
+        padding: 12px;
+    }
+    
+    .camera-switch-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-small {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+    .camera-main-controls .btn {
+        padding: 12px 20px !important;
+        font-size: 14px !important;
+    }
+    
+    .camera-switch-container {
+        margin: 0 10px 10px 10px;
+        padding: 10px;
+    }
+}
+
+/* Убедимся, что кнопки не перекрываются */
+.camera-controls {
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    display: block !important;
+    margin-top: 20px;
+}
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --dark: #0f172a;
+            --darker: #020617;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --glow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        
+        body {
+            background: var(--darker);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Градиентный фон */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+        
+        /* Навигация */
+        .navbar {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 0 30px;
+            height: 70px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .logo-text h2 {
+            background: linear-gradient(135deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 22px;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        
+        .user-avatar:hover {
+            transform: scale(1.1);
+            border-color: var(--primary);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        
+        .nav-btn.active {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-color: transparent;
+            color: #fff;
+            box-shadow: var(--glow);
+        }
+        
+        /* Основная сетка */
+        .dashboard {
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Карточки */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.3s;
+            margin-bottom: 25px;
+        }
+        
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--glow);
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        
+        /* Камера */
+        .camera-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            min-height: 400px;
+        }
+        
+        #videoElement {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.3) 100%);
+            pointer-events: none;
+        }
+        
+        .camera-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .camera-controls {
+            position: absolute;
+            bottom: 25px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        /* Геолокация */
+        .location-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .coord-box {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .coord-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), #8b5cf6);
+        }
+        
+        .coord-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 15px 0;
+            font-feature-settings: "tnum";
+            background: linear-gradient(135deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .coord-label {
+            color: #94a3b8;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Кнопки */
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* Панель профиля */
+        .profile-panel {
+            position: sticky;
+            top: 100px;
+        }
+        
+        .profile-card {
+            text-align: center;
+        }
+        
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        
+        .profile-avatar::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6, var(--success));
+            z-index: -1;
+        }
+        
+        .profile-name {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .profile-role {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        
+        /* Модальное окно редактирования */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlide 0.3s ease-out;
+        }
+        
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        
+        .form-input.error {
+            border-color: var(--danger);
+        }
+        
+        .form-hint {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.active {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 400px;
+            z-index: 3000;
+            animation: slideUp 0.3s ease-out;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .notification.error {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .notification.warning {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .notification.success .notification-icon {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        
+        .notification.error .notification-icon {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 15px;
+                height: 60px;
+            }
+            
+            .dashboard {
+                padding: 15px;
+            }
+            
+            .location-display {
+                grid-template-columns: 1fr;
+            }
+            
+            .camera-controls {
+                flex-wrap: wrap;
+                padding: 0 15px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            
+            .profile-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        /* Специальные эффекты */
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px currentColor;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-satellite-dish"></i>
+            </div>
+            <div class="logo-text">
+                <h2>Quantum Monitor</h2>
+            </div>
+        </div>
+        
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-btn">
+                <i class="fas fa-home"></i>
+                Панель
+            </a>
+            <a href="/monitor" class="nav-btn active">
+                <i class="fas fa-tv"></i>
+                Мониторинг
+            </a>
+            <a href="/logs" class="nav-btn">
+                <i class="fas fa-history"></i>
+                Логи
+            </a>
+        </div>
+        
+        <div class="user-menu">
+            <div class="user-avatar" id="userAvatar" onclick="showEditModal()" title="Редактировать профиль">
+                <!-- Avatar will be filled by JS -->
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Основной контент -->
+    <div class="dashboard">
+        <div class="dashboard-grid">
+            <!-- Левая колонка: Основные инструменты -->
+            <div>
+                <!-- Камера -->
+<div class="card slide-up">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-video"></i>
+            Камера наблюдения
+        </div>
+        <div class="camera-status" id="cameraStatus">
+            <span class="pulse-dot"></span>
+            <span id="statusText">Готово</span>
+        </div>
+    </div>
+    
+    <div class="camera-container">
+        <div id="cameraLoading" style="padding: 40px; text-align: center; color: #94a3b8;">
+            <i class="fas fa-camera fa-3x" style="margin-bottom: 20px;"></i>
+            <p>Камера отключена</p>
+            <p style="font-size: 14px; margin-top: 10px;">Нажмите "Включить камеру" для активации</p>
+        </div>
+        <video id="videoElement" autoplay playsinline style="display: none;"></video>
+        <div class="camera-overlay"></div>
+        <div class="camera-info" id="cameraInfo" style="display: none;">
+            <i class="fas fa-camera"></i>
+            <span>Камера активна</span>
+        </div>
+    </div>
+    
+    <!-- Основные кнопки управления - теперь выше -->
+    <div class="camera-main-controls">
+        <button id="startCamera" class="btn btn-primary" onclick="startCamera()">
+            <i class="fas fa-play"></i>
+            Включить камеру
+        </button>
+        <button id="captureBtn" class="btn btn-success" onclick="captureImage()" disabled>
+            <i class="fas fa-camera-retro"></i>
+            Захватить кадр
+        </button>
+        <button id="stopCamera" class="btn btn-danger" onclick="stopCamera()" disabled>
+            <i class="fas fa-stop"></i>
+            Остановить
+        </button>
+    </div>
+    
+    <!-- Кнопки выбора камеры - теперь отдельно и компактнее -->
+    <div class="camera-switch-container">
+        <div style="margin-bottom: 10px; text-align: center; color: #94a3b8; font-size: 14px;">
+            <i class="fas fa-exchange-alt"></i> Переключить камеру:
+        </div>
+        <div class="camera-switch-buttons">
+            <button class="btn btn-outline btn-small" onclick="switchCamera('user')">
+                <i class="fas fa-user"></i>
+                Фронтальная
+            </button>
+            <button class="btn btn-outline btn-small" onclick="switchCamera('environment')">
+                <i class="fas fa-mobile-alt"></i>
+                Задняя
+            </button>
+        </div>
+    </div>
+</div>
+                
+                <!-- Геолокация -->
+                <div class="card slide-up" style="animation-delay: 0.1s;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Геолокация в реальном времени
+                        </div>
+                        <div>
+                            <button class="btn btn-warning" onclick="startTracking()" id="trackBtn">
+                                <i class="fas fa-sync-alt"></i>
+                                Автообновление
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="location-display">
+                        <div class="coord-box">
+                            <div class="coord-label">Широта</div>
+                            <div class="coord-value" id="coordLat">—</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Latitude</div>
+                        </div>
+                        
+                        <div class="coord-box">
+                            <div class="coord-label">Долгота</div>
+                            <div class="coord-value" id="coordLon">—</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Longitude</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 25px;">
+                        <button id="getLocationBtn" class="btn btn-primary" onclick="getRealLocation()" style="width: 100%;">
+                            <i class="fas fa-location-crosshairs"></i>
+                            Получить текущие координаты
+                        </button>
+                    </div>
+                    
+                    <div id="locationDetails" style="margin-top: 20px; padding: 20px; background: rgba(15, 23, 42, 0.5); border-radius: 15px; display: none;">
+                        <h4 style="margin-bottom: 15px;">📊 Детали геолокации</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                            <div>
+                                <div style="color: #94a3b8; font-size: 12px;">Точность</div>
+                                <div id="accuracyValue" style="font-weight: bold;">—</div>
+                            </div>
+                            <div>
+                                <div style="color: #94a3b8; font-size: 12px;">Высота</div>
+                                <div id="altitudeValue" style="font-weight: bold;">—</div>
+                            </div>
+                            <div>
+                                <div style="color: #94a3b8; font-size: 12px;">Скорость</div>
+                                <div id="speedValue" style="font-weight: bold;">—</div>
+                            </div>
+                            <div>
+                                <div style="color: #94a3b8; font-size: 12px;">Время</div>
+                                <div id="locationTime" style="font-weight: bold;">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- История координат -->
+                <div class="card slide-up" style="animation-delay: 0.2s;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-history"></i>
+                            История координат
+                        </div>
+                        <button class="btn btn-outline" onclick="clearHistory()">
+                            <i class="fas fa-trash"></i>
+                            Очистить
+                        </button>
+                    </div>
+                    
+                    <div id="locationHistory" style="max-height: 300px; overflow-y: auto; padding: 10px;">
+                        <div style="text-align: center; padding: 30px; color: #94a3b8;">
+                            <i class="fas fa-inbox fa-2x" style="margin-bottom: 15px;"></i>
+                            <p>История пуста</p>
+                            <p style="font-size: 12px;">Получите первую геолокацию</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Правая колонка: Профиль и управление -->
+            <div class="profile-panel">
+                <!-- Профиль -->
+                <div class="card profile-card fade-in">
+                    <div class="profile-avatar" id="profileAvatar">
+                        <!-- Avatar will be filled by JS -->
+                    </div>
+                    
+                    <h2 class="profile-name" id="displayName">Загрузка...</h2>
+                    <div class="profile-role" id="userRole">Пользователь</div>
+                    
+                    <button class="btn btn-primary" onclick="showEditModal()" style="width: 100%; margin-bottom: 20px;">
+                        <i class="fas fa-user-edit"></i>
+                        Редактировать профиль
+                    </button>
+                    
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="statLocations">0</span>
+                            <span class="stat-label">Координат</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="statImages">0</span>
+                            <span class="stat-label">Снимков</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="statSessions">1</span>
+                            <span class="stat-label">Сессий</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid var(--card-border);">
+                        <h4 style="margin-bottom: 15px; font-size: 16px;">👤 Информация</h4>
+                        <div style="text-align: left;">
+                            <div style="margin-bottom: 10px;">
+                                <div style="color: #94a3b8; font-size: 12px;">Никнейм</div>
+                                <div id="profileUsername" style="font-weight: 500;">—</div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <div style="color: #94a3b8; font-size: 12px;">ФИО</div>
+                                <div id="profileFullName" style="font-weight: 500;">—</div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <div style="color: #94a3b8; font-size: 12px;">Телефон</div>
+                                <div id="profilePhone" style="font-weight: 500;">—</div>
+                            </div>
+                            <div>
+                                <div style="color: #94a3b8; font-size: 12px;">Дата регистрации</div>
+                                <div id="profileCreated" style="font-weight: 500;">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Быстрые действия -->
+                <div class="card fade-in" style="animation-delay: 0.1s;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-bolt"></i>
+                            Быстрые действия
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; gap: 12px;">
+                        <button class="btn btn-outline" onclick="exportData()">
+                            <i class="fas fa-download"></i>
+                            Экспорт данных
+                        </button>
+                        <button class="btn btn-outline" onclick="showSettings()">
+                            <i class="fas fa-cog"></i>
+                            Настройки системы
+                        </button>
+                        <button class="btn btn-outline" onclick="showHelp()">
+                            <i class="fas fa-question-circle"></i>
+                            Помощь
+                        </button>
+                        <a href="/logs" class="btn btn-outline" style="text-align: center;">
+                            <i class="fas fa-history"></i>
+                            Полная история
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Статус системы -->
+                <div class="card fade-in" style="animation-delay: 0.2s;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-server"></i>
+                            Статус системы
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; gap: 15px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Сеть</span>
+                                <span style="color: var(--success);">
+                                    <i class="fas fa-check-circle"></i> Онлайн
+                                </span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 95%; height: 100%; background: linear-gradient(90deg, var(--success), #059669); border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Производительность</span>
+                                <span style="color: var(--warning);">78%</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 78%; height: 100%; background: linear-gradient(90deg, var(--warning), #d97706); border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Безопасность</span>
+                                <span style="color: var(--primary);">
+                                    <i class="fas fa-shield-alt"></i> Активна
+                                </span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 100%; height: 100%; background: linear-gradient(90deg, var(--primary), #8b5cf6); border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно редактирования профиля -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0;">
+                    <i class="fas fa-user-edit"></i>
+                    Редактирование профиля
+                </h3>
+                <button onclick="hideEditModal()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="profileForm" onsubmit="return updateProfile(event)">
+                    <!-- Никнейм -->
+                    <div class="form-group">
+                        <label class="form-label" for="editUsername">
+                            <i class="fas fa-at"></i>
+                            Никнейм (обязательно)
+                        </label>
+                        <input type="text" id="editUsername" class="form-input" 
+                               pattern="[a-zA-Z0-9_]{3,20}"
+                               title="Только английские буквы, цифры и подчеркивание (3-20 символов)"
+                               required>
+                        <div class="form-hint">
+                            Только английские буквы (a-z), цифры (0-9) и подчеркивание (_). 3-20 символов.
+                        </div>
+                    </div>
+                    
+                    <!-- Отображаемое имя -->
+                    <div class="form-group">
+                        <label class="form-label" for="editDisplayName">
+                            <i class="fas fa-user-circle"></i>
+                            Отображаемое имя
+                        </label>
+                        <input type="text" id="editDisplayName" class="form-input" 
+                               placeholder="Как вас видеть другим">
+                        <div class="form-hint">
+                            Любое имя для отображения. Может содержать пробелы и спецсимволы.
+                        </div>
+                    </div>
+                    
+                    <!-- ФИО -->
+                    <div class="form-group">
+                        <label class="form-label" for="editFullName">
+                            <i class="fas fa-id-card"></i>
+                            ФИО (полное имя)
+                        </label>
+                        <input type="text" id="editFullName" class="form-input" 
+                               pattern="[а-яА-ЯёЁ\s\-]{2,50}"
+                               title="Только кириллические буквы, пробелы и дефисы">
+                        <div class="form-hint">
+                            Ваше полное имя. Только кириллические буквы, пробелы и дефисы.
+                        </div>
+                    </div>
+                    
+                    <!-- Телефон -->
+                    <div class="form-group">
+                        <label class="form-label" for="editPhone">
+                            <i class="fas fa-phone"></i>
+                            Номер телефона
+                        </label>
+                        <input type="tel" id="editPhone" class="form-input" 
+                               placeholder="+7 999 123-45-67"
+                               pattern="^\+?[1-9]\d{1,14}$">
+                        <div class="form-hint">
+                            Международный формат. Пример: +7 999 123-45-67
+                        </div>
+                    </div>
+                    
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label class="form-label" for="editEmail">
+                            <i class="fas fa-envelope"></i>
+                            Email
+                        </label>
+                        <input type="email" id="editEmail" class="form-input">
+                        <div class="form-hint">
+                            Необязательно. Для восстановления доступа.
+                        </div>
+                    </div>
+                    
+                    <!-- Цвет аватара -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-palette"></i>
+                            Цвет аватара
+                        </label>
+                        <div class="color-picker">
+                            <div class="color-option" style="background: #6366f1;" onclick="selectColor('#6366f1')"></div>
+                            <div class="color-option" style="background: #10b981;" onclick="selectColor('#10b981')"></div>
+                            <div class="color-option" style="background: #f59e0b;" onclick="selectColor('#f59e0b')"></div>
+                            <div class="color-option" style="background: #8b5cf6;" onclick="selectColor('#8b5cf6')"></div>
+                            <div class="color-option" style="background: #ec4899;" onclick="selectColor('#ec4899')"></div>
+                            <div class="color-option" style="background: #3b82f6;" onclick="selectColor('#3b82f6')"></div>
+                        </div>
+                        <input type="hidden" id="avatarColor" value="#6366f1">
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; margin-top: 30px;">
+                        <button type="button" class="btn" onclick="hideEditModal()" style="flex: 1; background: rgba(255,255,255,0.1);">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="flex: 2;" id="saveProfileBtn">
+                            <i class="fas fa-save"></i>
+                            Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Уведомления -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
+        let mediaStream = null;
+        let currentLocation = null;
+        let trackingInterval = null;
+        let isTracking = false;
+        let profileData = null;
+        
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Загрузка профиля
+            await loadProfile();
+            
+            // Инициализация аватаров
+            updateAvatars();
+            
+            // Проверка поддержки функций
+            checkFeatureSupport();
+            
+            // Загрузка статистики
+            loadStats();
+            
+            // Обновление каждые 30 секунд
+            setInterval(loadStats, 30000);
+            
+            showNotification('Система Quantum Monitor готова к работе', 'success');
+        });
+        
+        // ==================== ПРОФИЛЬ ====================
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/user_profile');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        profileData = data.profile;
+                        updateProfileDisplay();
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки профиля:', error);
+            }
+        }
+        
+        function updateProfileDisplay() {
+            if (!profileData) return;
+            
+            // Отображаемое имя
+            const displayName = profileData.display_name || profileData.username;
+            document.getElementById('displayName').textContent = displayName;
+            
+            // Никнейм
+            document.getElementById('profileUsername').textContent = profileData.username;
+            
+            // ФИО
+            document.getElementById('profileFullName').textContent = profileData.full_name || 'Не указано';
+            
+            // Телефон
+            document.getElementById('profilePhone').textContent = profileData.phone_number || 'Не указан';
+            
+            // Email
+            document.getElementById('editEmail').value = profileData.email || '';
+            
+            // Дата регистрации
+            if (profileData.created_at) {
+                const date = new Date(profileData.created_at);
+                document.getElementById('profileCreated').textContent = date.toLocaleDateString('ru-RU');
+            }
+            
+            // Роль
+            document.getElementById('userRole').textContent = 
+                profileData.role === 'admin' ? 'Администратор' : 'Пользователь';
+            
+            // Заполняем форму редактирования
+            document.getElementById('editUsername').value = profileData.username;
+            document.getElementById('editDisplayName').value = profileData.display_name || '';
+            document.getElementById('editFullName').value = profileData.full_name || '';
+            document.getElementById('editPhone').value = profileData.phone_number || '';
+            document.getElementById('avatarColor').value = profileData.avatar_color || '#6366f1';
+            
+            // Выбираем цвет в палитре
+            selectColor(profileData.avatar_color || '#6366f1');
+            
+            // Обновляем аватар
+            updateAvatars();
+        }
+        
+        function updateAvatars() {
+            if (!profileData) return;
+            
+            const avatarColor = profileData.avatar_color || '#6366f1';
+            const displayName = profileData.display_name || profileData.username;
+            const firstLetter = displayName.charAt(0).toUpperCase();
+            
+            // Большой аватар в профиле
+            const profileAvatar = document.getElementById('profileAvatar');
+            profileAvatar.style.background = avatarColor;
+            profileAvatar.textContent = firstLetter;
+            
+            // Маленький аватар в навигации
+            const userAvatar = document.getElementById('userAvatar');
+            userAvatar.style.background = avatarColor;
+            userAvatar.textContent = firstLetter;
+        }
+        
+        // ==================== РЕДАКТИРОВАНИЕ ПРОФИЛЯ ====================
+        function showEditModal() {
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        function hideEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+        
+        function selectColor(color) {
+            // Убираем активный класс у всех цветов
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            
+            // Добавляем активный класс выбранному цвету
+            event.target.classList.add('active');
+            
+            // Сохраняем выбранный цвет
+            document.getElementById('avatarColor').value = color;
+        }
+        
+        async function updateProfile(event) {
+            event.preventDefault();
+            
+            const btn = document.getElementById('saveProfileBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+            
+            try {
+                const formData = {
+                    username: document.getElementById('editUsername').value.trim(),
+                    display_name: document.getElementById('editDisplayName').value.trim() || null,
+                    full_name: document.getElementById('editFullName').value.trim() || null,
+                    phone_number: document.getElementById('editPhone').value.trim() || null,
+                    email: document.getElementById('editEmail').value.trim() || null,
+                    avatar_color: document.getElementById('avatarColor').value
+                };
+                
+                // Валидация
+                if (!/^[a-zA-Z0-9_]{3,20}$/.test(formData.username)) {
+                    throw new Error('Никнейм может содержать только английские буквы, цифры и подчеркивание (3-20 символов)');
+                }
+                
+                if (formData.full_name && !/^[а-яА-ЯёЁ\s\-]{2,50}$/.test(formData.full_name)) {
+                    throw new Error('ФИО может содержать только кириллические буквы, пробелы и дефисы');
+                }
+                
+                if (formData.phone_number && !/^\+?[1-9]\d{1,14}$/.test(formData.phone_number.replace(/\s/g, ''))) {
+                    throw new Error('Неверный формат телефона. Используйте международный формат');
+                }
+                
+                const response = await fetch('/api/update_profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Обновляем профиль
+                    await loadProfile();
+                    hideEditModal();
+                    showNotification('Профиль успешно обновлен', 'success');
+                } else {
+                    throw new Error(result.error || 'Ошибка обновления профиля');
+                }
+                
+            } catch (error) {
+                showNotification(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+        
+        // ==================== КАМЕРА ====================
+        async function startCamera() {
+            try {
+                showNotification('Запрос доступа к камере...', 'info');
+                
+                // Останавливаем предыдущий поток
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Определяем камеру (фронтальная/задняя)
+                const facingMode = window.currentCameraMode || 'environment';
+                
+                const constraints = {
+                    video: {
+                        facingMode: facingMode,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        frameRate: { ideal: 30 }
+                    },
+                    audio: false
+                };
+                
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Показываем видео
+                const videoElement = document.getElementById('videoElement');
+                videoElement.srcObject = mediaStream;
+                videoElement.style.display = 'block';
+                
+                // Обновляем интерфейс
+                document.getElementById('cameraLoading').style.display = 'none';
+                document.getElementById('cameraInfo').style.display = 'flex';
+                document.getElementById('startCamera').disabled = true;
+                document.getElementById('captureBtn').disabled = false;
+                document.getElementById('stopCamera').disabled = false;
+                
+                // Обновляем статус
+                document.getElementById('statusText').textContent = 'Активна';
+                updateCameraInfo(videoElement);
+                
+                showNotification('Камера активирована', 'success');
+                
+            } catch (error) {
+                showNotification(`Ошибка камеры: ${error.name}`, 'error');
+                console.error('Camera error:', error);
+            }
+        }
+        
+        function updateCameraInfo(video) {
+            const info = document.getElementById('cameraInfo');
+            const facingMode = window.currentCameraMode === 'user' ? 'Фронтальная' : 'Задняя';
+            info.innerHTML = `
+                <i class="fas fa-camera"></i>
+                <span>${facingMode} | ${video.videoWidth}×${video.videoHeight} | 30fps</span>
+            `;
+        }
+        
+        function switchCamera(mode) {
+            window.currentCameraMode = mode;
+            
+            if (mediaStream) {
+                stopCamera();
+                setTimeout(startCamera, 500);
+                showNotification(`Переключение на ${mode === 'user' ? 'фронтальную' : 'заднюю'} камеру`, 'info');
+            } else {
+                showNotification(`Выбрана ${mode === 'user' ? 'фронтальная' : 'задняя'} камера`, 'info');
+            }
+        }
+        
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+                
+                document.getElementById('videoElement').style.display = 'none';
+                document.getElementById('cameraLoading').style.display = 'block';
+                document.getElementById('cameraInfo').style.display = 'none';
+                document.getElementById('startCamera').disabled = false;
+                document.getElementById('captureBtn').disabled = true;
+                document.getElementById('stopCamera').disabled = true;
+                
+                document.getElementById('statusText').textContent = 'Остановлена';
+                showNotification('Камера остановлена', 'warning');
+            }
+        }
+        
+        async function captureImage() {
+            if (!mediaStream) {
+                showNotification('Камера не активирована', 'error');
+                return;
+            }
+            
+            try {
+                const video = document.getElementById('videoElement');
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Добавляем водяной знак
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(10, canvas.height - 50, 400, 40);
+                ctx.fillStyle = 'white';
+                ctx.font = '14px Arial';
+                ctx.fillText(`Quantum Monitor • ${new Date().toLocaleString('ru-RU')}`, 20, canvas.height - 25);
+                
+                // Конвертация и отправка
+                canvas.toBlob(async (blob) => {
+                    const formData = new FormData();
+                    formData.append('image', blob, `capture_${Date.now()}.jpg`);
+                    
+                    showNotification('Отправка изображения...', 'info');
+                    
+                    const response = await fetch('/api/capture_image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showNotification(`Изображение сохранено: ${result.filename}`, 'success');
+                        
+                        // Обновляем статистику
+                        loadStats();
+                        
+                        // Показываем превью
+                        const imgUrl = canvas.toDataURL('image/jpeg', 0.9);
+                        const preview = document.createElement('img');
+                        preview.src = imgUrl;
+                        preview.style.maxWidth = '200px';
+                        preview.style.borderRadius = '8px';
+                        preview.style.marginTop = '10px';
+                        
+                        const locationResult = document.getElementById('locationResult');
+                        if (locationResult) {
+                            locationResult.appendChild(preview);
+                        }
+                        
+                    } else {
+                        showNotification(`Ошибка: ${result.error}`, 'error');
+                    }
+                }, 'image/jpeg', 0.9);
+                
+            } catch (error) {
+                showNotification(`Ошибка захвата: ${error.message}`, 'error');
+            }
+        }
+        
+        // ==================== ГЕОЛОКАЦИЯ ====================
+        function getRealLocation() {
+            if (!navigator.geolocation) {
+                showNotification('Геолокация не поддерживается браузером', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('getLocationBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Определение...';
+            
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+            
+            navigator.geolocation.getCurrentPosition(
+                // Успех
+                async (position) => {
+                    currentLocation = {
+                        lat: position.coords.latitude.toFixed(6),
+                        lon: position.coords.longitude.toFixed(6),
+                        accuracy: Math.round(position.coords.accuracy),
+                        altitude: position.coords.altitude ? position.coords.altitude.toFixed(1) + ' м' : 'Нет данных',
+                        speed: position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) + ' км/ч' : 'Нет данных',
+                        timestamp: new Date(position.timestamp).toLocaleString('ru-RU')
+                    };
+                    
+                    // Обновляем интерфейс
+                    updateLocationDisplay(currentLocation);
+                    
+                    // Добавляем в историю
+                    addToHistory(currentLocation);
+                    
+                    // Отправляем на сервер
+                    await sendLocationToServer(currentLocation);
+                    
+                    // Восстанавливаем кнопку
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    
+                },
+                
+                // Ошибка
+                (error) => {
+                    let errorMessage;
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'Доступ к геолокации запрещен. Разрешите в настройках браузера.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Информация о местоположении недоступна.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = 'Время запроса истекло.';
+                            break;
+                        default:
+                            errorMessage = 'Неизвестная ошибка геолокации.';
+                    }
+                    
+                    showNotification(errorMessage, 'error');
+                    
+                    document.getElementById('locationResult').innerHTML = `
+                        <div style="color: #ef4444; text-align: center;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            ${errorMessage}
+                        </div>
+                    `;
+                    
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                },
+                
+                options
+            );
+        }
+        
+        function updateLocationDisplay(location) {
+            // Координаты
+            document.getElementById('coordLat').textContent = location.lat;
+            document.getElementById('coordLon').textContent = location.lon;
+            
+            // Детали
+            document.getElementById('accuracyValue').textContent = `±${location.accuracy} м`;
+            document.getElementById('altitudeValue').textContent = location.altitude;
+            document.getElementById('speedValue').textContent = location.speed;
+            document.getElementById('locationTime').textContent = location.timestamp;
+            
+            // Показываем детали
+            document.getElementById('locationDetails').style.display = 'block';
+            
+            // Обновляем главный результат
+            document.getElementById('locationResult').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #4dabf7;">
+                        ${location.lat}, ${location.lon}
+                    </div>
+                    <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">
+                        Точность: ±${location.accuracy} м
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function sendLocationToServer(location) {
+            try {
+                const response = await fetch('/api/update_location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(location)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Координаты сохранены на сервере', 'success');
+                    
+                    // Обновляем статистику
+                    loadStats();
+                    
+                } else {
+                    showNotification(`Ошибка сервера: ${result.error}`, 'warning');
+                }
+                
+            } catch (error) {
+                showNotification('Ошибка сети при отправке координат', 'error');
+            }
+        }
+        
+        function startTracking() {
+            const btn = document.getElementById('trackBtn');
+            
+            if (isTracking) {
+                // Останавливаем отслеживание
+                clearInterval(trackingInterval);
+                isTracking = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Автообновление';
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-warning');
+                showNotification('Автообновление остановлено', 'warning');
+            } else {
+                // Запускаем отслеживание
+                isTracking = true;
+                btn.innerHTML = '<i class="fas fa-stop"></i> Остановить';
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-danger');
+                
+                // Первый запрос сразу
+                getRealLocation();
+                
+                // Затем каждые 30 секунд
+                trackingInterval = setInterval(getRealLocation, 30000);
+                
+                showNotification('Автообновление запущено (каждые 30 сек)', 'success');
+            }
+        }
+        
+        // ==================== ИСТОРИЯ ====================
+        function addToHistory(location) {
+            const container = document.getElementById('locationHistory');
+            const emptyMessage = container.querySelector('div[style*="text-align: center"]');
+            
+            if (emptyMessage) {
+                container.innerHTML = '';
+            }
+            
+            const historyItem = document.createElement('div');
+            historyItem.style.cssText = `
+                padding: 12px 15px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                font-size: 14px;
+                animation: slideUp 0.3s ease-out;
+            `;
+            
+            historyItem.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 500; color: #4dabf7;">
+                            <i class="fas fa-map-pin"></i>
+                            ${location.lat}, ${location.lon}
+                        </div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+                            ${location.timestamp} • Точность: ±${location.accuracy}м
+                        </div>
+                    </div>
+                    <button onclick="copyCoordinates('${location.lat}', '${location.lon}')" 
+                            style="background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.prepend(historyItem);
+            
+            // Ограничиваем количество записей
+            if (container.children.length > 10) {
+                container.removeChild(container.lastChild);
+            }
+        }
+        
+        function clearHistory() {
+            if (confirm('Очистить всю историю координат?')) {
+                document.getElementById('locationHistory').innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #94a3b8;">
+                        <i class="fas fa-inbox fa-2x" style="margin-bottom: 15px;"></i>
+                        <p>История пуста</p>
+                        <p style="font-size: 12px;">Получите первую геолокацию</p>
+                    </div>
+                `;
+                showNotification('История очищена', 'warning');
+            }
+        }
+        
+        function copyCoordinates(lat, lon) {
+            navigator.clipboard.writeText(`${lat}, ${lon}`).then(() => {
+                showNotification('Координаты скопированы в буфер', 'success');
+            });
+        }
+        
+        // ==================== УТИЛИТЫ ====================
+        function checkFeatureSupport() {
+            // Камера
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                document.getElementById('cameraLoading').innerHTML = `
+                    <p style="color: #ef4444;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Камера не поддерживается вашим браузером
+                    </p>
+                `;
+                document.getElementById('startCamera').disabled = true;
+            }
+            
+            // Геолокация
+            if (!navigator.geolocation) {
+                document.getElementById('getLocationBtn').disabled = true;
+                document.getElementById('getLocationBtn').innerHTML = '<i class="fas fa-ban"></i> Не поддерживается';
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/session_info');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.stats) {
+                        document.getElementById('statLocations').textContent = data.stats.locations || 0;
+                        document.getElementById('statImages').textContent = data.stats.images || 0;
+                    }
+                }
+            } catch (error) {
+                console.log('Не удалось загрузить статистику');
+            }
+        }
+        
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const icons = {
+                'success': 'fas fa-check-circle',
+                'error': 'fas fa-exclamation-circle',
+                'warning': 'fas fa-exclamation-triangle',
+                'info': 'fas fa-info-circle'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="${icons[type] || 'fas fa-info-circle'}"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 500; margin-bottom: 5px;">
+                        ${type === 'success' ? 'Успешно' : 
+                          type === 'error' ? 'Ошибка' :
+                          type === 'warning' ? 'Внимание' : 'Информация'}
+                    </div>
+                    <div style="font-size: 14px; color: #cbd5e1;">
+                        ${message}
+                    </div>
+                </div>
+                <button onclick="this.parentElement.remove()" 
+                        style="background: none; border: none; color: #94a3b8; cursor: pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Автоудаление через 5 секунд
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+        
+        function exportData() {
+            showNotification('Экспорт данных в разработке', 'info');
+        }
+        
+        function showSettings() {
+            showNotification('Настройки системы в разработке', 'info');
+        }
+        
+        function showHelp() {
+            showNotification('Открывается справочная система...', 'info');
+        }
+        
+        // Глобальные функции для копирования
+        window.copyCoordinates = copyCoordinates;
+    </script>
+</body>
+</html>
